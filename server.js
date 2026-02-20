@@ -3,12 +3,17 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Middleware ────────────────────────────────────────────────
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://saaptd.vercel.app"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -25,14 +30,14 @@ const capaRoutes = require('./routes/capaRoutes');
 const checklistRoutes = require('./routes/checklistRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/audit', auditRoutes);
-app.use('/api/evidence', evidenceRoutes);
-app.use('/api/findings', findingRoutes);
-app.use('/api/capa', capaRoutes);
-app.use('/api/checklist', checklistRoutes);
-app.use('/api/categories', categoryRoutes);
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/audit', auditRoutes);
+app.use('/evidence', evidenceRoutes);
+app.use('/findings', findingRoutes);
+app.use('/capa', capaRoutes);
+app.use('/checklist', checklistRoutes);
+app.use('/categories', categoryRoutes);
 
 // ── Health Check ──────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -47,5 +52,5 @@ app.use((err, req, res, next) => {
 
 // ── Start Server ──────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`✅ Server running on http://localhost:${PORT}`);
+    console.log(`✅ Server running on https://railway.com`);
 });
