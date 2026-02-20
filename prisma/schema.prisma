@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model roles {
+  id        Int    @id @default(autoincrement())
+  role_name String @unique(map: "role_name") @db.VarChar(50)
+}
+
+model users {
+  id            Int        @id @default(autoincrement())
+  username      String     @unique(map: "username") @db.VarChar(50)
+  password_hash String     @db.VarChar(255)
+  full_name     String?    @db.VarChar(100)
+  role          users_role
+  entity_name   String?    @db.VarChar(100)
+}
+
+model audit_categories {
+  category_id       Int     @id @default(autoincrement())
+  category_name     String  @db.VarChar(100)
+  weightage_percent Decimal @db.Decimal(5, 2)
+}
+
+model categories {
+  id              Int                    @id @default(autoincrement())
+  category_name   String                 @db.VarChar(100)
+  group_type      categories_group_type?
+  checklist_items checklist_items[]
+  findings        findings[]
+}
+
+model audit_phases {
+  phase_id   Int    @id @default(autoincrement())
+  phase_name String @db.VarChar(50)
+}
+
+model audit_sessions {
+  id                  Int                    @id @default(autoincrement())
+  entity_id           Int?
+  auditor_id          Int?
+  category_id         Int?
+  audit_date          DateTime?              @db.Date
+  final_score_percent Decimal?               @db.Decimal(5, 2)
+  status              audit_sessions_status? @default(Draft)
+  audit_results       audit_results[]
+}
+
+model checklist_items {
+  id                    Int               @id @default(autoincrement())
+  category_id           Int?
+  parent_id             Int?
+  item_code             String?           @db.VarChar(10)
+  description           String            @db.Text
+  full_marks            Decimal?          @db.Decimal(5, 2)
+  level                 Int?
+  audit_results         audit_results[]
+  audit_scores          audit_scores[]
+  categories            categories?       @relation(fields: [category_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "checklist_items_ibfk_1")
+  checklist_items       checklist_items?  @relation("checklist_itemsTochecklist_items", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "checklist_items_ibfk_2")
+  other_checklist_items checklist_items[] @relation("checklist_itemsTochecklist_items")
+
+  @@index([category_id], map: "category_id")
+  @@index([parent_id], map: "parent_id")
+}
+
+model audit_results {
+  id              Int              @id @default(autoincrement())
+  session_id      Int?
+  item_id         Int?
+  score_given     Int?
+  markah_dapat    Decimal?         @db.Decimal(5, 2)
+  comment         String?          @db.Text
+  audit_evidence  audit_evidence[]
+  audit_sessions  audit_sessions?  @relation(fields: [session_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "audit_results_ibfk_1")
+  checklist_items checklist_items? @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "audit_results_ibfk_2")
+
+  @@index([item_id], map: "item_id")
+  @@index([session_id], map: "session_id")
+}
+
+model audit_scores {
+  id              Int              @id @default(autoincrement())
+  audit_id        Int?
+  item_id         Int?
+  score_selected  Int?
+  marks_obtained  Decimal?         @db.Decimal(5, 2)
+  comments        String?          @db.Text
+  checklist_items checklist_items? @relation(fields: [item_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "audit_scores_ibfk_1")
+
+  @@index([item_id], map: "item_id")
+}
+
+model evidence {
+  id          Int       @id @default(autoincrement())
+  finding_id  Int?
+  file_path   String?   @db.VarChar(255)
+  uploaded_at DateTime? @default(now()) @db.Timestamp(0)
+  findings    findings? @relation(fields: [finding_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "evidence_ibfk_1")
+
+  @@index([finding_id], map: "finding_id")
+}
+
+model audit_evidence {
+  id            Int            @id @default(autoincrement())
+  result_id     Int?
+  file_path     String?        @db.VarChar(255)
+  audit_results audit_results? @relation(fields: [result_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "audit_evidence_ibfk_1")
+
+  @@index([result_id], map: "result_id")
+}
+
+model findings {
+  id             Int                      @id @default(autoincrement())
+  category_id    Int?
+  auditor_id     Int?
+  entity_id      Int?
+  observation    String?                  @db.Text
+  finding_status findings_finding_status? @default(Sesuai)
+  created_at     DateTime?                @default(now()) @db.Timestamp(0)
+  capa_actions   capa_actions[]
+  evidence       evidence[]
+  categories     categories?              @relation(fields: [category_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "findings_ibfk_1")
+
+  @@index([category_id], map: "category_id")
+}
+
+model capa_actions {
+  id          Int                  @id @default(autoincrement())
+  finding_id  Int?
+  root_cause  String?              @db.Text
+  action_plan String?              @db.Text
+  due_date    DateTime?            @db.Date
+  status      capa_actions_status? @default(Open)
+  findings    findings?            @relation(fields: [finding_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "capa_actions_ibfk_1")
+
+  @@index([finding_id], map: "finding_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model temp_excel_import {
+  bil          String?  @db.VarChar(50)
+  perkara      String?  @db.Text
+  markah_penuh Decimal? @db.Decimal(5, 2)
+  category_id  Int?
+
+  @@ignore
+}
+
+enum categories_group_type {
+  Gerak
+  Admin
+  Logistik
+}
+
+enum users_role {
+  Superadmin
+  Admin
+  Auditor
+  Entity
+}
+
+enum capa_actions_status {
+  Open
+  In_Progress @map("In-Progress")
+  Closed
+}
+
+enum findings_finding_status {
+  Sesuai
+  Tidak_Sesuai @map("Tidak Sesuai")
+  Pemerhatian
+}
+
+enum audit_sessions_status {
+  Draft
+  Submitted
+  Verified
+}
