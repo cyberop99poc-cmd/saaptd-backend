@@ -2,18 +2,17 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+app.use(cors({
+  origin: 'https://saaptd.vercel.app',
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Middleware ────────────────────────────────────────────────
-app.use(cors({
-  origin: [
-    "https://saaptd.vercel.app"
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
